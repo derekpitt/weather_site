@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/static/style.css" type="text/css" />
+    <!-- <script type="text/javascript" src="/static/chart.min.js"></script> -->
+    <script type="text/javascript" src="/static/microajax.min.js"></script>
+  </head>
+  <body>
+
+    <div id="lastUpdated">3/3/32 1:30pm</div>
+
+    <div class="item">
+      <div class="current">
+        <p>Temp</p>
+        <h1><span id="current[OutsideTemerature]"></span>&ordm;</h1>
+      </div>
+      <!--
+      <canvas width="100" height="100" id="trend_myChart1"></canvas>
+      <canvas width="500" height="100" id="myChart"></canvas>
+      -->
+    </div>
+
+    <div class="item">
+      <div class="current">
+        <p>Humidity</p>
+        <h1><span id="current[OutsideHumidity]"></span>%</h1>
+      </div>
+      <!--
+      <canvas width="100" height="100" id="trend_myChart2"></canvas>
+      <canvas width="500" height="100" id="myChart2"></canvas>
+      -->
+    </div>
+
+    <div class="item">
+      <div class="current">
+        <p>Bar</p>
+        <h1><span id="current[Barometer]"></span></h1>
+      </div>
+      <!--
+      <canvas width="100" height="100" id="trend_myChart3"></canvas>
+      <canvas width="500" height="100" id="myChart3"></canvas>
+      -->
+    </div>
+
+    <div class="clear"></div>
+
+    <script>
+      var renderMainCharts = function() {
+        var ids = [ "myChart", "myChart2", "myChart3" ];
+
+        ids.forEach(function(id) {
+          var ctx = document.getElementById(id).getContext("2d");
+
+          var data = {
+            labels: [ "", "", "", "", "", "", "", "", "", "", "", ""  ],
+            datasets: [
+              { 
+                strokeColor : "rgba(220,220,220,1)",
+                fillColor : "rgba(151,187,205,0.5)",
+                data: [ 70, 71, 70, 90, 91, 92, 70, 71, 70, 90, 91, 92  ]
+              }
+            ]
+          };
+
+          var options = {
+            scaleFontSize : 10,
+            datasetStrokeWidth: 3,
+            pointDotRadius: 1
+          };
+
+          var newChart = new Chart(ctx).Line(data, options);
+        });
+      };
+
+
+      var renderTrendCharts = function() {
+        var ids = [ "trend_myChart1", "trend_myChart2", "trend_myChart3" ];
+
+        ids.forEach(function(id) {
+          var ctx = document.getElementById(id).getContext("2d");
+
+          var data = {
+            labels: [ "", "", "" ],
+            datasets: [
+              { 
+                strokeColor : "rgba(220,220,220,1)",
+                fillColor : "rgba(151,187,205,0.5)",
+                data: [ 70, 74, 72 ]
+              }
+            ]
+          };
+
+          var options = {
+            scaleFontSize : 10,
+            datasetStrokeWidth: 3,
+            pointDotRadius: 1,
+            scaleFontColor: "#fff",
+            scaleShowGridLines: false,
+            bezierCurve: false,
+            scaleLineWidth: 0.1
+          };
+
+          var newChart = new Chart(ctx).Line(data, options);
+        });
+
+      };
+
+      //renderMainCharts();
+      //renderTrendCharts();
+
+      var updateCurrent = function(sample, time) {
+        var timeUpdated = new Date(time);
+        document.getElementById("lastUpdated").innerText = timeUpdated;
+
+        for (k in sample) {
+          var v = sample[k]
+          var element = document.getElementById("current[" + k + "]");
+
+          if (element != null) {
+            element.innerText = "" + v;
+          }
+        }
+      };
+
+      function updater() {
+        microAjax("/latest", function(res) {
+          res = JSON.parse(res);
+          updateCurrent(res.Sample, res.Time);
+        });
+      };
+
+      // first load
+      updateCurrent({{ .Sample }}, {{ .Time }});
+
+      // and update every 5 minutes for now..
+      setInterval(updater, 5 * 60 * 1000);
+
+    </script>
+  </body>
+</html>
