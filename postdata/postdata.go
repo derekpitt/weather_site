@@ -41,7 +41,7 @@ func checkSig(data, dataSig, key string) bool {
 }
 
 func prepareData(time time.Time, packet loop2packet.Loop2Packet) string {
-	return fmt.Sprintf("%+v%+v", time, packet)
+	return fmt.Sprintf("%s%v", time.Unix(), packet)
 }
 
 func (pd *PostData) sign(time time.Time, packet loop2packet.Loop2Packet, key string) {
