@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
+	"time"
 )
 
 // flags
@@ -22,6 +24,29 @@ var (
 	password  = flag.String("password", "dev", "mysql password")
 	database  = flag.String("database", "weather", "mysql database name")
 )
+
+type cache struct {
+	latestSample data.SampleFormat
+}
+
+// cache stuff
+var (
+	cacheMutex = &sync.RWMutex{}
+	cacheData  = cache{}
+)
+
+func fillCache() {
+	latestData, err := data.GetLatestSample()
+
+	if err != nil {
+		return
+	}
+
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	cacheData.latestSample = latestData
+}
 
 func postData(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -48,7 +73,10 @@ func postData(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLatestJsonString() (string, error) {
-	latestData, err := data.GetLatestSample()
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
+
+	latestData := cacheData.latestSample
 	jsonData, err := json.Marshal(latestData)
 
 	if err != nil {
@@ -73,8 +101,18 @@ func latest(w http.ResponseWriter, r *http.Request) {
 var indexTemplate, _ = template.ParseFiles("views/index.html")
 
 func index(w http.ResponseWriter, r *http.Request) {
-	latestData, _ := data.GetLatestSample()
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
+
+	latestData := cacheData.latestSample
 	indexTemplate.Execute(w, latestData)
+}
+
+func poll(minutes time.Duration) {
+	for {
+		fillCache()
+		time.Sleep(minutes * time.Minute)
+	}
 }
 
 func main() {
@@ -86,6 +124,8 @@ func main() {
 		log.Fatal("Error opening database")
 	}
 	defer data.CloseDatabase()
+
+	go poll(1)
 
 	// static dir
 	cwd, _ := os.Getwd()
