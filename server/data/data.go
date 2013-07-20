@@ -31,7 +31,7 @@ func WriteSample(postData postdata.PostData) error {
 	if db == nil {
 		return &databaseError{"Database connection nil"}
 	}
-	_, err := db.Query(`
+	_, err := db.Exec(`
     INSERT INTO weather 
       (TimeSampled, BarometerTrend, Barometer, 
        InsideTemperature, InsideHumidity, OutsideTemerature, 
