@@ -27,18 +27,19 @@ var (
 )
 
 // cache stuff
-type cache struct {
-	latestSample data.SampleFormat
-	trends       struct {
-		outsideTemp []data.Trend
-		outsideHum  []data.Trend
-		bar         []data.Trend
+
+type mainData struct {
+	Latest data.SampleFormat
+	Trends struct {
+		OutsideTemerature []data.Trend
+		OutsideHumidity   []data.Trend
+		Barometer         []data.Trend
 	}
 }
 
 var (
 	cacheMutex = &sync.RWMutex{}
-	cacheData  = cache{}
+	cacheData  = mainData{}
 )
 
 func fillCache() {
@@ -55,10 +56,10 @@ func fillCache() {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	cacheData.latestSample = latestData
-	cacheData.trends.outsideTemp = outsideTempTrend
-	cacheData.trends.outsideHum = outsideHumTrend
-	cacheData.trends.bar = barTrend
+	cacheData.Latest = latestData
+	cacheData.Trends.OutsideTemerature = outsideTempTrend
+	cacheData.Trends.OutsideHumidity = outsideHumTrend
+	cacheData.Trends.Barometer = barTrend
 }
 
 func postData(w http.ResponseWriter, r *http.Request) {
@@ -85,26 +86,10 @@ func postData(w http.ResponseWriter, r *http.Request) {
 	log.Println("Good Times!!")
 }
 
-type mainData struct {
-	Latest data.SampleFormat
-	Trends struct {
-		OutsideTemerature []data.Trend
-		OutsideHumidity   []data.Trend
-		Barometer         []data.Trend
-	}
-}
-
 func getData() mainData {
 	cacheMutex.RLock()
 	defer cacheMutex.RUnlock()
-	data := mainData{}
-
-	data.Latest = cacheData.latestSample
-	data.Trends.OutsideTemerature = cacheData.trends.outsideTemp
-	data.Trends.OutsideHumidity = cacheData.trends.outsideHum
-	data.Trends.Barometer = cacheData.trends.bar
-
-	return data
+	return cacheData
 }
 
 func latest(w http.ResponseWriter, r *http.Request) {
