@@ -11,8 +11,8 @@ The pusher and server share a key that they use to verify identity. Don't want s
 Dead simple searver that displays and inserts new data.
 
 ### TODO:
- - Cache the results in a goroutine
- - Finish trend charts
+ - ~~Cache the results in a goroutine~~
+ - ~~Finish trend charts~~
  - Finish History charts
  - Add more data to view
 
