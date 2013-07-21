@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/derekpitt/weather_site/postdata"
 	"github.com/derekpitt/weather_site/server/data"
+	"github.com/derekpitt/weather_site/server/gziper"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -122,6 +123,7 @@ func latest(w http.ResponseWriter, r *http.Request) {
 var indexTemplate, _ = template.ParseFiles("views/index.html")
 
 func index(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	indexTemplate.Execute(w, getData())
 }
 
@@ -147,12 +149,15 @@ func main() {
 	// static dir
 	cwd, _ := os.Getwd()
 	staticDir := cwd + "/static"
-	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir(staticDir))))
+	staticHandler := http.StripPrefix("/static", http.FileServer(http.Dir(staticDir)))
+	http.HandleFunc("/static/", gziper.MakeGzipHandler(func(w http.ResponseWriter, r *http.Request) {
+		staticHandler.ServeHTTP(w, r)
+	}))
 
 	// data handler
 	http.HandleFunc("/data", postData)
-	http.HandleFunc("/latest", latest)
-	http.HandleFunc("/", index)
+	http.HandleFunc("/latest", gziper.MakeGzipHandler(latest))
+	http.HandleFunc("/", gziper.MakeGzipHandler(index))
 
 	log.Println("Listening on port", *port)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))
