@@ -25,11 +25,16 @@ var (
 	database  = flag.String("database", "weather", "mysql database name")
 )
 
+// cache stuff
 type cache struct {
 	latestSample data.SampleFormat
+	trends       struct {
+		outsideTemp []data.Trend
+		outsideHum  []data.Trend
+		bar         []data.Trend
+	}
 }
 
-// cache stuff
 var (
 	cacheMutex = &sync.RWMutex{}
 	cacheData  = cache{}
@@ -37,6 +42,10 @@ var (
 
 func fillCache() {
 	latestData, err := data.GetLatestSample()
+
+	outsideTempTrend, err := data.Get3HourTrend("OutsideTemerature", latestData.Time)
+	outsideHumTrend, err := data.Get3HourTrend("OutsideHumidity", latestData.Time)
+	barTrend, err := data.Get3HourTrend("Barometer", latestData.Time)
 
 	if err != nil {
 		return
@@ -46,6 +55,9 @@ func fillCache() {
 	defer cacheMutex.Unlock()
 
 	cacheData.latestSample = latestData
+	cacheData.trends.outsideTemp = outsideTempTrend
+	cacheData.trends.outsideHum = outsideHumTrend
+	cacheData.trends.bar = barTrend
 }
 
 func postData(w http.ResponseWriter, r *http.Request) {
@@ -72,22 +84,31 @@ func postData(w http.ResponseWriter, r *http.Request) {
 	log.Println("Good Times!!")
 }
 
-func getLatestJsonString() (string, error) {
+type mainData struct {
+	Latest data.SampleFormat
+	Trends struct {
+		OutsideTemerature []data.Trend
+		OutsideHumidity   []data.Trend
+		Barometer         []data.Trend
+	}
+}
+
+func getData() mainData {
 	cacheMutex.RLock()
 	defer cacheMutex.RUnlock()
+	data := mainData{}
 
-	latestData := cacheData.latestSample
-	jsonData, err := json.Marshal(latestData)
+	data.Latest = cacheData.latestSample
+	data.Trends.OutsideTemerature = cacheData.trends.outsideTemp
+	data.Trends.OutsideHumidity = cacheData.trends.outsideHum
+	data.Trends.Barometer = cacheData.trends.bar
 
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonData), nil
+	return data
 }
 
 func latest(w http.ResponseWriter, r *http.Request) {
-	latest, err := getLatestJsonString()
+	data := getData()
+	dataJson, err := json.Marshal(data)
 
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
@@ -95,17 +116,13 @@ func latest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	fmt.Fprintf(w, "%s", latest)
+	fmt.Fprintf(w, "%s", string(dataJson))
 }
 
 var indexTemplate, _ = template.ParseFiles("views/index.html")
 
 func index(w http.ResponseWriter, r *http.Request) {
-	cacheMutex.RLock()
-	defer cacheMutex.RUnlock()
-
-	latestData := cacheData.latestSample
-	indexTemplate.Execute(w, latestData)
+	indexTemplate.Execute(w, getData())
 }
 
 func poll(minutes time.Duration) {

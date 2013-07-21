@@ -1,7 +1,7 @@
 <html>
   <head>
     <link rel="stylesheet" href="/static/style.css" type="text/css" />
-    <!-- <script type="text/javascript" src="/static/chart.min.js"></script> -->
+    <script type="text/javascript" src="/static/chart.min.js"></script>
     <script type="text/javascript" src="/static/microajax.min.js"></script>
   </head>
   <body>
@@ -13,8 +13,8 @@
         <p>Temp</p>
         <h1><span id="current[OutsideTemerature]"></span>&ordm;</h1>
       </div>
+      <canvas width="100" height="100" id="trend_outsideTemp"></canvas>
       <!--
-      <canvas width="100" height="100" id="trend_myChart1"></canvas>
       <canvas width="500" height="100" id="myChart"></canvas>
       -->
     </div>
@@ -24,8 +24,8 @@
         <p>Humidity</p>
         <h1><span id="current[OutsideHumidity]"></span>%</h1>
       </div>
+      <canvas width="100" height="100" id="trend_outsideHum"></canvas>
       <!--
-      <canvas width="100" height="100" id="trend_myChart2"></canvas>
       <canvas width="500" height="100" id="myChart2"></canvas>
       -->
     </div>
@@ -35,8 +35,8 @@
         <p>Bar</p>
         <h1><span id="current[Barometer]"></span></h1>
       </div>
+      <canvas width="100" height="100" id="trend_bar"></canvas>
       <!--
-      <canvas width="100" height="100" id="trend_myChart3"></canvas>
       <canvas width="500" height="100" id="myChart3"></canvas>
       -->
     </div>
@@ -72,11 +72,9 @@
       };
 
 
-      var renderTrendCharts = function() {
-        var ids = [ "trend_myChart1", "trend_myChart2", "trend_myChart3" ];
-
-        ids.forEach(function(id) {
-          var ctx = document.getElementById(id).getContext("2d");
+      var renderTrendCharts = function(trendData) {
+        trendData.forEach(function(d) {
+          var ctx = document.getElementById(d.id).getContext("2d");
 
           var data = {
             labels: [ "", "", "" ],
@@ -84,7 +82,7 @@
               { 
                 strokeColor : "rgba(220,220,220,1)",
                 fillColor : "rgba(151,187,205,0.5)",
-                data: [ 70, 74, 72 ]
+                data: d.data.map(function (ad) { return ad.AverageData; })
               }
             ]
           };
@@ -96,7 +94,8 @@
             scaleFontColor: "#fff",
             scaleShowGridLines: false,
             bezierCurve: false,
-            scaleLineWidth: 0.1
+            scaleLineWidth: 0.1,
+            animation: false
           };
 
           var newChart = new Chart(ctx).Line(data, options);
@@ -121,18 +120,36 @@
         }
       };
 
+      function update(data) {
+        updateCurrent(data.Latest.Sample, data.Latest.Time);
+        renderTrendCharts([
+          {
+            id: "trend_outsideTemp",
+            data: data.Trends.OutsideTemerature
+          },
+          {
+            id: "trend_outsideHum",
+            data: data.Trends.OutsideHumidity
+          },
+          {
+            id: "trend_bar",
+            data: data.Trends.Barometer
+          }
+        ]);
+      }
+
       function updater() {
         microAjax("/latest", function(res) {
           res = JSON.parse(res);
-          updateCurrent(res.Sample, res.Time);
+          update(res);
         });
-      };
+      }
 
       // first load
-      updateCurrent({{ .Sample }}, {{ .Time }});
+      update({{ . }});
 
-      // and update every 5 minutes for now..
-      setInterval(updater, 5 * 60 * 1000);
+      // and update every minute
+      setInterval(updater, 1 * 60 * 1000);
 
 
       var _gaq = _gaq || [];
