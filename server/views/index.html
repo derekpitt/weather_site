@@ -72,9 +72,23 @@
       };
 
 
+      var calcScaleOptions = function(rangeLow, rangeHigh) {
+        var steps = 10;
+        var width = (rangeHigh - rangeLow) / steps;
+        return {
+          scaleSteps: steps,
+          scaleStepWidth: Math.ceil(width),
+          scaleStartValue: rangeLow
+        };
+      };
+
+
       var renderTrendCharts = function(trendData) {
         trendData.forEach(function(d) {
           var ctx = document.getElementById(d.id).getContext("2d");
+
+          var chartData = d.data.map(function (ad) { return ad.AverageData; });
+          var scaleOptions = calcScaleOptions(d.rangeLow, d.rangeHigh);
 
           var data = {
             labels: [ "", "", "" ],
@@ -82,13 +96,19 @@
               { 
                 strokeColor : "rgba(220,220,220,1)",
                 fillColor : "rgba(151,187,205,0.5)",
-                data: d.data.map(function (ad) { return ad.AverageData; })
+                data: chartData
               }
             ]
           };
 
           var options = {
             scaleFontSize : 10,
+
+            scaleOverride: true,
+            scaleStartValue: scaleOptions.scaleStartValue,
+            scaleSteps: scaleOptions.scaleSteps,
+            scaleStepWidth: scaleOptions.scaleStepWidth,
+
             datasetStrokeWidth: 3,
             pointDotRadius: 1,
             scaleFontColor: "#fff",
@@ -125,18 +145,25 @@
         renderTrendCharts([
           {
             id: "trend_outsideTemp",
-            data: data.Trends.OutsideTemerature
+            data: data.Trends.OutsideTemerature,
+            rangeLow: 50,
+            rangeHigh: 120
           },
           {
             id: "trend_outsideHum",
-            data: data.Trends.OutsideHumidity
+            data: data.Trends.OutsideHumidity,
+            rangeLow: 0,
+            rangeHigh: 100
           },
           {
             id: "trend_bar",
-            data: data.Trends.Barometer
+            data: data.Trends.Barometer,
+            rangeLow: 20,
+            rangeHigh: 32.5
           }
         ]);
       }
+
 
       function updater() {
         microAjax("/latest", function(res) {
@@ -144,6 +171,7 @@
           update(res);
         });
       }
+
 
       // first load
       update({{ . }});
