@@ -141,6 +141,7 @@
       };
 
       function update(data) {
+        window.document.title = data.Latest.Sample.OutsideTemerature + " at Derek's house";
         updateCurrent(data.Latest.Sample, data.Latest.Time);
         renderTrendCharts([
           {
