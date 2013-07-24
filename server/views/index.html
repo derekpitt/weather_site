@@ -73,7 +73,7 @@
 
 
       var calcScaleOptions = function(rangeLow, rangeHigh) {
-        var steps = 10;
+        var steps = 1;
         var width = (rangeHigh - rangeLow) / steps;
         return {
           scaleSteps: steps,
@@ -140,6 +140,13 @@
         }
       };
 
+      function trendAdder(data, fn, howMuch) {
+        var mappedData = data.map(function(x) { return x.AverageData; });
+        var res = fn.apply(null, mappedData);
+
+        return res + howMuch;
+      }
+
       function update(data) {
         window.document.title = data.Latest.Sample.OutsideTemerature + " at Derek's house";
         updateCurrent(data.Latest.Sample, data.Latest.Time);
@@ -147,20 +154,20 @@
           {
             id: "trend_outsideTemp",
             data: data.Trends.OutsideTemerature,
-            rangeLow: 50,
-            rangeHigh: 120
+            rangeLow: trendAdder(data.Trends.OutsideTemerature, Math.min, -5),
+            rangeHigh: trendAdder(data.Trends.OutsideTemerature, Math.max, 5)
           },
           {
             id: "trend_outsideHum",
             data: data.Trends.OutsideHumidity,
-            rangeLow: 0,
-            rangeHigh: 100
+            rangeLow: trendAdder(data.Trends.OutsideHumidity, Math.min, -5),
+            rangeHigh: trendAdder(data.Trends.OutsideHumidity, Math.max, 5)
           },
           {
             id: "trend_bar",
             data: data.Trends.Barometer,
-            rangeLow: 20,
-            rangeHigh: 32.5
+            rangeLow: trendAdder(data.Trends.Barometer, Math.min, -1),
+            rangeHigh: trendAdder(data.Trends.Barometer, Math.max, 1)
           }
         ]);
       }
