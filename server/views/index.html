@@ -108,6 +108,7 @@
             scaleStartValue: scaleOptions.scaleStartValue,
             scaleSteps: scaleOptions.scaleSteps,
             scaleStepWidth: scaleOptions.scaleStepWidth,
+            scaleLabel: "",
 
             datasetStrokeWidth: 3,
             pointDotRadius: 1,
@@ -150,6 +151,10 @@
       function update(data) {
         window.document.title = data.Latest.Sample.OutsideTemerature + " at Derek's house";
         updateCurrent(data.Latest.Sample, data.Latest.Time);
+
+        // change the trend data for Bar (maybe move to server side??)
+        data.Trends.Barometer.forEach(function(t) { t.AverageData *= 100; });
+
         renderTrendCharts([
           {
             id: "trend_outsideTemp",
@@ -166,8 +171,8 @@
           {
             id: "trend_bar",
             data: data.Trends.Barometer,
-            rangeLow: trendAdder(data.Trends.Barometer, Math.min, -1),
-            rangeHigh: trendAdder(data.Trends.Barometer, Math.max, 1)
+            rangeLow: trendAdder(data.Trends.Barometer, Math.min, -10),
+            rangeHigh: trendAdder(data.Trends.Barometer, Math.max, 10)
           }
         ]);
       }
