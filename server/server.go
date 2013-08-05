@@ -94,7 +94,7 @@ func getData() mainData {
 
 func latest(w http.ResponseWriter, r *http.Request) {
 	data := getData()
-	dataJson, err := json.Marshal(data)
+	dataJSON, err := json.Marshal(data)
 
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
@@ -102,7 +102,7 @@ func latest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	fmt.Fprintf(w, "%s", string(dataJson))
+	fmt.Fprintf(w, "%s", string(dataJSON))
 }
 
 var indexTemplate, _ = template.ParseFiles("views/index.html")
