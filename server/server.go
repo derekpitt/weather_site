@@ -35,6 +35,11 @@ type mainData struct {
 		OutsideHumidity   []data.Trend
 		Barometer         []data.Trend
 	}
+  HighLows struct {
+		OutsideTemerature []data.HighLow
+		OutsideHumidity   []data.HighLow
+		Barometer         []data.HighLow
+  }
 }
 
 var (
@@ -49,6 +54,10 @@ func fillCache() {
 	outsideHumTrend, err := data.Get3HourTrend("OutsideHumidity", latestData.Time)
 	barTrend, err := data.Get3HourTrend("Barometer", latestData.Time)
 
+  outsideTempHighLow, err := data.Get7DayHighLow("OutsideTemerature", latestData.Time)
+  outsideHumHighLow, err := data.Get7DayHighLow("OutsideHumidity", latestData.Time)
+  barHighLow, err := data.Get7DayHighLow("Barometer", latestData.Time)
+
 	if err != nil {
 		return
 	}
@@ -60,6 +69,10 @@ func fillCache() {
 	cacheData.Trends.OutsideTemerature = outsideTempTrend
 	cacheData.Trends.OutsideHumidity = outsideHumTrend
 	cacheData.Trends.Barometer = barTrend
+
+  cacheData.HighLows.OutsideTemerature = outsideTempHighLow
+  cacheData.HighLows.OutsideHumidity = outsideHumHighLow
+  cacheData.HighLows.Barometer = barHighLow
 }
 
 func postData(w http.ResponseWriter, r *http.Request) {

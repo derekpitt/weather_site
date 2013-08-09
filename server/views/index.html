@@ -13,10 +13,8 @@
         <p>Temp</p>
         <h1><span id="current[OutsideTemerature]"></span>&ordm;</h1>
       </div>
-      <canvas width="100" height="100" id="trend_outsideTemp"></canvas>
-      <!--
-      <canvas width="500" height="100" id="myChart"></canvas>
-      -->
+      <canvas width="100" height="150" id="trend_outsideTemp"></canvas>
+      <canvas width="700" height="150" id="highlow_outsideTemp"></canvas>
     </div>
 
     <div class="item">
@@ -24,10 +22,8 @@
         <p>Humidity</p>
         <h1><span id="current[OutsideHumidity]"></span>%</h1>
       </div>
-      <canvas width="100" height="100" id="trend_outsideHum"></canvas>
-      <!--
-      <canvas width="500" height="100" id="myChart2"></canvas>
-      -->
+      <canvas width="100" height="150" id="trend_outsideHum"></canvas>
+      <canvas width="700" height="150" id="highlow_outsideHum"></canvas>
     </div>
 
     <div class="item">
@@ -35,11 +31,18 @@
         <p>Bar</p>
         <h1><span id="current[Barometer]"></span></h1>
       </div>
-      <canvas width="100" height="100" id="trend_bar"></canvas>
-      <!--
-      <canvas width="500" height="100" id="myChart3"></canvas>
-      -->
+      <canvas width="100" height="150" id="trend_bar"></canvas>
+      <canvas width="700" height="150" id="highlow_bar"></canvas>
     </div>
+
+    <!--
+    <div class="item">
+      <div class="current">
+        <p>Wind Speed</p>
+        <h1><span id="current[WindSpeed]"></span></h1>
+      </div>
+    </div>
+    -->
 
     <div class="clear"></div>
 
@@ -72,14 +75,57 @@
       };
 
 
-      var calcScaleOptions = function(rangeLow, rangeHigh) {
-        var steps = 1;
+      var calcScaleOptions = function(rangeLow, rangeHigh, steps) {
+        if (steps == null) {
+          steps = 1;
+        }
+
         var width = (rangeHigh - rangeLow) / steps;
         return {
           scaleSteps: steps,
           scaleStepWidth: Math.ceil(width),
           scaleStartValue: rangeLow
         };
+      };
+
+
+      var renderHighLowCharts = function(chartData) {
+        chartData.forEach(function(d) {
+          var ctx = document.getElementById(d.id).getContext("2d");
+
+          var lowChartData = d.data.map(function (ld) { return ld.Low; });
+          var highChartData = d.data.map(function (hd) { return hd.High; });
+          var labels = d.data.map(function(dd) { return dd.Month + "/" + dd.Day + "/" + dd.Year; });
+          var scaleOptions = calcScaleOptions(d.rangeLow, d.rangeHigh, d.rangeSteps);
+
+          var data = {
+            labels: labels,
+            datasets: [
+              { 
+                strokeColor : "rgba(220,220,220,1)",
+                fillColor : "rgba(151,187,205,0.5)",
+                data: lowChartData
+              },
+              { 
+                strokeColor : "rgba(220,220,220,1)",
+                fillColor : "#D97041",
+                data: highChartData
+              }
+            ]
+          };
+
+          var options = {
+            scaleFontSize : 10,
+            scaleOverride: true,
+            scaleStartValue: scaleOptions.scaleStartValue,
+            scaleSteps: scaleOptions.scaleSteps,
+            scaleStepWidth: scaleOptions.scaleStepWidth,
+            animation: false
+          };
+
+          var newChart = new Chart(ctx).Bar(data, options);
+        });
+
       };
 
 
@@ -173,6 +219,31 @@
             data: data.Trends.Barometer,
             rangeLow: trendAdder(data.Trends.Barometer, Math.min, -1),
             rangeHigh: trendAdder(data.Trends.Barometer, Math.max, 1)
+          }
+        ]);
+
+        renderHighLowCharts([
+          {
+            id: "highlow_outsideTemp",
+            data: data.HighLows.OutsideTemerature,
+            rangeLow: 50,
+            rangeHigh: 120,
+            rangeSteps: 7
+
+          },
+          {
+            id: "highlow_outsideHum",
+            data: data.HighLows.OutsideHumidity,
+            rangeLow: 0,
+            rangeHigh: 100,
+            rangeSteps: 10
+          },
+          {
+            id: "highlow_bar",
+            data: data.HighLows.Barometer,
+            rangeLow: 26,
+            rangeHigh: 32,
+            rangeSteps: 6
           }
         ]);
       }

@@ -61,13 +61,14 @@ body {
 .item {
   padding: 20px;
   clear: both;
-  height: 100px;
+  height: 150px;
 }
 
 .current {
   float: left;
   width: 15%;
   text-align: center;
+  padding-top: 40px;
 }
 
 .current h1 {
